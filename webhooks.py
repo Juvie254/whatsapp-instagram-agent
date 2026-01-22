@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, HTTPException
 from agent import process_message
+from fastapi.responses import PlainTextResponse
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ async def verify_whatsapp_webhook(request: Request):
     challenge = params.get("hub.challenge")
 
     if mode == "subscribe" and token == VERIFY_TOKEN:
-        return int(challenge)
+        return PlainTextResponse(challenge)
 
     raise HTTPException(status_code=403, detail="Verification failed")
 
