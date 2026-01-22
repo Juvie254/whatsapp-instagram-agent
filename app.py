@@ -10,7 +10,7 @@ async def startup():
     init_db()
     start_scheduler()
 
-app.include_router(webhook_router, prefix="/webhook")
+app.include_router(webhook_router)
 
 @app.get("/")
 async def health():
