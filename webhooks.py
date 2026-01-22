@@ -3,7 +3,7 @@ from agent import process_message
 
 router = APIRouter()
 
-VERIFY_TOKEN = "davii_verify_token_123"
+VERIFY_TOKEN = "davii_verify_token_v2"
 
 
 # -------------------------
