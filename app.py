@@ -2,15 +2,14 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from webhooks import router as webhook_router
 from init_db import init_db
-from scheduler import start_scheduler, shutdown_scheduler
+from scheduler import start_scheduler, shutdown_scheduler, add_jobs
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     init_db()
     start_scheduler()
+    add_jobs()   # 🔑 THIS IS CRITICAL
     yield
-    # Shutdown
     shutdown_scheduler()
 
 app = FastAPI(
