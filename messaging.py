@@ -21,6 +21,5 @@ def send_whatsapp_message(phone: str, text: str):
 
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
-
 print("🔑 TOKEN SET:", bool(WHATSAPP_TOKEN))
 print("📞 PHONE NUMBER ID SET:", bool(PHONE_NUMBER_ID))

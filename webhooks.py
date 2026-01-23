@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Request, HTTPException
 from agent import process_message
 from fastapi.responses import PlainTextResponse
+from messaging import send_whatsapp_message
+
 
 router = APIRouter()
 
