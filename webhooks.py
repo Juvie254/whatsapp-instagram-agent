@@ -50,7 +50,7 @@ async def whatsapp_webhook(request: Request):
         text = message["text"]["body"]
 
         send_whatsapp_message(
-            to=phone,
+            phone=phone,
             text="✅ Webhook received your message. Bot is live!"
         )
 
