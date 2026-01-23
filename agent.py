@@ -87,3 +87,4 @@ def process_message(phone: str, text: str):
         )
 
     db.close()
+print(f"🤖 Agent processing message from {phone}: {text}")

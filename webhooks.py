@@ -49,11 +49,6 @@ async def whatsapp_webhook(request: Request):
         phone = message["from"]
         text = message["text"]["body"]
 
-        send_whatsapp_message(
-            phone=phone,
-            text="✅ Webhook received your message. Bot is live!"
-        )
-
         # IMPORTANT: match agent signature
         process_message(
             phone=phone,
