@@ -8,7 +8,7 @@ app = FastAPI(title="Inbox Conversion Agent")
 @app.on_event("startup")
 async def startup():
     init_db()
-    start_scheduler()
+    #start_scheduler()
 
 app.include_router(webhook_router)
 
