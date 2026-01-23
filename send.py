@@ -1,3 +1,8 @@
+from messaging import send_whatsapp_message
+
 def send_message(platform: str, user_id: str, text: str):
-    # WhatsApp API will go here later
-    print(f"[FOLLOW-UP → {platform} | {user_id}] {text}")
+    if platform == "whatsapp":
+        send_whatsapp_message(
+            phone=user_id,
+            text=text
+        )

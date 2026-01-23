@@ -51,10 +51,7 @@ async def whatsapp_webhook(request: Request):
         text = message["text"]["body"]
 
         # IMPORTANT: match agent signature
-        send_whatsapp_message(
-            phone="254742836995",  # <-- REPLACE with YOUR WhatsApp number
-            text="✅ Hard test message from webhook"
-        )
+        process_message(phone=phone, text=text)
 
         return {"status": "ok"}
 
