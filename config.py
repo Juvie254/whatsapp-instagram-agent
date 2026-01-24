@@ -1,11 +1,10 @@
 from openai import OpenAI
 import os
-from dotenv import load_dotenv
 
-#load_dotenv()
+print("🔎 OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
+print("🔎 OPENROUTER_API_KEY =", os.getenv("OPENROUTER_API_KEY"))
 
 client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_key=os.getenv("OPENAI_API_KEY"),
     base_url="https://openrouter.ai/api/v1"
 )
-print("🔐 API KEY PRESENT:", bool(os.getenv("OPENAI_API_KEY")))
