@@ -23,5 +23,6 @@ def classify_intent(text: str) -> str:
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
+        print("🔐 OpenRouter key present:", bool(os.getenv("OPENROUTER_API_KEY")))
         print("🔥 INTENT CLASSIFICATION FAILED:", repr(e))
         return "OTHER"
