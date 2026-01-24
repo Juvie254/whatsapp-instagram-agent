@@ -1,5 +1,5 @@
 from memory import cancel_followups
-from send import send_message
+from messaging import send_whatsapp_message
 
 BUSINESS_OWNER_PHONE = "2547XXXXXXXX"
 
@@ -17,5 +17,6 @@ def handoff_to_human(user):
     # 3. Notify business owner
     send_whatsapp_message(
         BUSINESS_OWNER_PHONE,
-        f"🔥 New hot lead\nPhone: {user.phone}\nStatus: Ready to buy"
+        f"🔥 New hot lead\nPhone: {user.platform_user_id
+}\nStatus: Ready to buy"
     )

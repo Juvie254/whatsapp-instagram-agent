@@ -8,6 +8,7 @@ from send import send_message
 
 
 def process_message(phone: str, text: str):
+    print(f"🧠 Agent received message | {phone}: {text}")
     platform = "whatsapp"
     platform_user_id = phone
 
@@ -39,7 +40,13 @@ def process_message(phone: str, text: str):
     # Save inbound message
     save_message(user.id, "in", text)
 
-    intent = classify_intent(text)
+    try:
+        intent = classify_intent(text)
+        print("🎯 Detected intent:", intent)
+    except Exception as e:
+        print("🔥 Agent intent crash:", repr(e))
+        intent = "OTHER"
+
 
     # 🚫 Human already handling
     if user.state == "HUMAN_HANDOFF":
@@ -48,20 +55,20 @@ def process_message(phone: str, text: str):
 
     # ---------- SALES LOGIC ----------
 
-    if intent == "ASK_PRICE":
+    if intent == "PRICE":
         send_message(platform, platform_user_id,
                      "This jacket is KES 2,500. Free delivery within Nairobi 😊")
-        user.state = "ASKING_PRICE"
+        user.state = "PRICE"
 
-    elif intent == "INTEREST":
+    elif intent == "READY_TO_BUY":
         send_message(platform, platform_user_id,
                      "Great choice! Would you like to place an order?")
-        user.state = "INTERESTED"
+        user.state = "READY_TO_BUY"
 
-    elif intent == "OBJECTION":
+    elif intent == "NOT_INTERESTED":
         send_message(platform, platform_user_id,
                      "Totally understand 😊 Would a small discount help?")
-        user.state = "OBJECTION"
+        user.state = "NOT_INTERESTED"
 
     elif intent == "BUY":
         send_message(platform, platform_user_id,

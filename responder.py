@@ -1,4 +1,3 @@
-from openai import OpenAI
 from config import client
 
 #client = OpenAI(api_key=OPENAI_API_KEY)
