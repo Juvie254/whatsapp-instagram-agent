@@ -1,4 +1,5 @@
 from config import client
+import os
 
 INTENT_PROMPT = """
 Classify the message into exactly ONE of these categories:
