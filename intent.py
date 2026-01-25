@@ -1,5 +1,7 @@
-from config import client
+import requests
 import os
+
+OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY")
 
 INTENT_PROMPT = """
 Classify the message into exactly ONE of these categories:
@@ -14,16 +16,28 @@ Return ONLY the category name.
 
 def classify_intent(text: str) -> str:
     try:
-        response = client.chat.completions.create(
-            model="mistralai/devstral-2512:free",
-            messages=[
-                {"role": "system", "content": INTENT_PROMPT},
-                {"role": "user", "content": text}
-            ],
-            temperature=0
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://your-app.onrender.com",
+                "X-Title": "WhatsApp Sales Agent"
+            },
+            json={
+                "model": "mistralai/devstral-2512:free",
+                "messages": [
+                    {"role": "system", "content": INTENT_PROMPT},
+                    {"role": "user", "content": text}
+                ],
+                "temperature": 0
+            },
+            timeout=20
         )
-        return response.choices[0].message.content.strip()
+
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"].strip()
+
     except Exception as e:
-        print("🔐 OpenRouter key present:", bool(os.getenv("OPENROUTER_API_KEY")))
         print("🔥 INTENT CLASSIFICATION FAILED:", repr(e))
         return "OTHER"
