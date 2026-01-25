@@ -1,11 +1,15 @@
-from openai import OpenAI
 import os
+from openai import OpenAI
 
-print("🔎 OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
-print("🔎 OPENROUTER_API_KEY =", os.getenv("OPENROUTER_API_KEY"))
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # you set it correctly now
 
 client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
+    api_key=OPENROUTER_API_KEY,
+    base_url="https://openrouter.ai/api/v1",
+    default_headers={
+        "HTTP-Referer": "https://your-app.onrender.com",  # can be any valid URL
+        "X-Title": "WhatsApp Instagram Sales Agent"
+    }
 )
-print("DEBUG KEY:", os.getenv("OPENROUTER_API_KEY")[:10])
+
+print("🔐 OpenRouter key present:", bool(OPENROUTER_API_KEY))
