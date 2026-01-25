@@ -25,7 +25,7 @@ def classify_intent(text: str) -> str:
                 "X-Title": "WhatsApp Sales Agent"
             },
             json={
-                "model": "mistralai/devstral-2512:free",
+                "model": "meta-llama/llama-3.1-8b-instruct:free",
                 "messages": [
                     {"role": "system", "content": INTENT_PROMPT},
                     {"role": "user", "content": text}

@@ -11,7 +11,7 @@ Always move the conversation toward purchase.
 
 def generate_reply(intent: str, text: str) -> str:
     response = client.chat.completions.create(
-        model="mistralai/devstral-2512:free",
+        model="meta-llama/llama-3.1-8b-instruct:free",
         messages=[
             {"role": "system", "content": REPLY_PROMPT},
             {"role": "assistant", "content": f"Intent: {intent}"},
