@@ -1,11 +1,10 @@
-from config import call_llm
+from intent import classify_intent
+from responder import safe_generate_reply
 
-res = call_llm(
-    model="test",
-    messages=[
-        {"role": "system", "content": "You are friendly."},
-        {"role": "user", "content": "Say hello again."}
-    ]
-)
+while True:
+    msg = input("You: ")
+    intent = classify_intent(msg)
+    reply = safe_generate_reply(intent, msg)
 
-print(res["choices"][0]["message"]["content"])
+    print(f"\nIntent: {intent}")
+    print(f"Agent: {reply}\n")
