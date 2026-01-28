@@ -1,4 +1,5 @@
 from intent import classify_intent
+from responder import generate_reply
 from memory import save_message, cancel_followups
 from follow_up import schedule_follow_up
 from handoff import handoff_to_human
@@ -9,12 +10,12 @@ from send import send_message
 
 def process_message(phone: str, text: str):
     print(f"🧠 Agent received message | {phone}: {text}")
+
     platform = "whatsapp"
     platform_user_id = phone
-
     db = SessionLocal()
 
-    # Get or create user
+    # ---------- USER ----------
     user = (
         db.query(User)
         .filter(
@@ -34,56 +35,48 @@ def process_message(phone: str, text: str):
         db.commit()
         db.refresh(user)
 
-    # User replied → cancel follow-ups
     cancel_followups(user.id)
-
-    # Save inbound message
     save_message(user.id, "in", text)
 
-    try:
-        intent = classify_intent(text)
-        print("🎯 Detected intent:", intent)
-    except Exception as e:
-        print("🔥 Agent intent crash:", repr(e))
-        intent = "OTHER"
+    # ---------- INTENT ----------
+    intent = classify_intent(text)
+    print("🎯 Detected intent:", intent)
 
-
-    # 🚫 Human already handling
+    # ---------- HUMAN HANDOFF ----------
     if user.state == "HUMAN_HANDOFF":
         db.close()
         return
 
-    # ---------- SALES LOGIC ----------
-
-    if intent == "PRICE":
-        send_message(platform, platform_user_id,
-                     "This jacket is KES 2,500. Free delivery within Nairobi 😊")
+    # ---------- STATE UPDATE (NO SENDING HERE) ----------
+    if intent == "ASK_PRICE":
         user.state = "PRICE"
 
-    elif intent == "READY_TO_BUY":
-        send_message(platform, platform_user_id,
-                     "Great choice! Would you like to place an order?")
-        user.state = "READY_TO_BUY"
-
-    elif intent == "NOT_INTERESTED":
-        send_message(platform, platform_user_id,
-                     "Totally understand 😊 Would a small discount help?")
-        user.state = "NOT_INTERESTED"
-
     elif intent == "BUY":
-        send_message(platform, platform_user_id,
-                     "Awesome! I’m connecting you with a human to complete your order 👌")
         user.state = "HUMAN_HANDOFF"
         db.commit()
         handoff_to_human(user)
         db.close()
         return
 
+    elif intent == "OBJECTION":
+        user.state = "OBJECTION"
+
+    elif intent == "INTEREST":
+        user.state = "INTEREST"
+
     else:
-        send_message(platform, platform_user_id,
-                     "Hi 👋 Let me know if you'd like the price or want to order.")
+        user.state = "ACTIVE"
 
     db.commit()
+
+    # ---------- LLM REPLY (SINGLE SOURCE OF TRUTH) ----------
+    reply = generate_reply(intent, text)
+
+    if not reply:
+        reply = "Hi 👋 How can I help you today?"
+
+    print("📤 FINAL REPLY TO USER:", reply)
+    send_message(platform, platform_user_id, reply)
 
     # ---------- FOLLOW-UP ----------
     if user.state != "HUMAN_HANDOFF":
@@ -94,4 +87,3 @@ def process_message(phone: str, text: str):
         )
 
     db.close()
-    print(f"🤖 Agent processing message from {phone}: {text}")

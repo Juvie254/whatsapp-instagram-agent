@@ -20,7 +20,8 @@ def classify_intent(text: str) -> str:
                 {"role": "user", "content": text}
             ]
         )
-        return result["choices"][0]["message"]["content"].strip()
+        intent = result["choices"][0]["message"]["content"].strip().upper()
+        return intent
     except Exception as e:
         print("🔥 INTENT CLASSIFICATION FAILED:", repr(e))
         return "OTHER"
