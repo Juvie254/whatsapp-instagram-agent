@@ -13,7 +13,7 @@ Rules:
 def generate_reply(intent: str, text: str) -> str:
     try:
         result = call_llm(
-            model="upstage/solar-pro-3:free",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": REPLY_PROMPT},
                 {"role": "assistant", "content": f"Detected intent: {intent}"},
