@@ -1,89 +1,69 @@
-from intent import classify_intent
-from responder import generate_reply
-from memory import save_message, cancel_followups
-from follow_up import schedule_follow_up
+from intent import detect_intent
+from policy import should_respond, next_state
+from memory import save_message
+from messaging import send_whatsapp_message
+from followup import schedule_follow_up
 from handoff import handoff_to_human
-from db import SessionLocal
-from models import User
-from send import send_message
+from groq import Groq
 
+client = Groq()
 
-def process_message(phone: str, text: str):
-    print(f"🧠 Agent received message | {phone}: {text}")
-
-    platform = "whatsapp"
-    platform_user_id = phone
-    db = SessionLocal()
-
-    # ---------- USER ----------
-    user = (
-        db.query(User)
-        .filter(
-            User.platform == platform,
-            User.platform_user_id == platform_user_id
-        )
-        .first()
+def call_llm(messages):
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-120b",
+        messages=messages,
+        temperature=0.6
     )
+    return response.choices[0].message.content
 
-    if not user:
-        user = User(
-            platform=platform,
-            platform_user_id=platform_user_id,
-            state="NEW"
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
 
-    cancel_followups(user.id)
+def process_message(user, text):
+    # 1️⃣ Save incoming message
     save_message(user.id, "in", text)
 
-    # ---------- INTENT ----------
-    intent = classify_intent(text)
-    print("🎯 Detected intent:", intent)
+    # 2️⃣ Detect intent
+    intent = detect_intent(text)
 
-    # ---------- HUMAN HANDOFF ----------
-    if user.state == "HUMAN_HANDOFF":
-        db.close()
-        return
+    # 3️⃣ Policy check (CRITICAL)
+    if not should_respond(user.state, intent):
+        print("🛑 Policy blocked response")
+        return None
 
-    # ---------- STATE UPDATE (NO SENDING HERE) ----------
-    if intent == "ASK_PRICE":
-        user.state = "PRICE"
+    # 4️⃣ State transition
+    new_state = next_state(user.state, intent)
+    user.state = new_state
 
-    elif intent == "BUY":
-        user.state = "HUMAN_HANDOFF"
-        db.commit()
+    # 5️⃣ Hard rules (NO LLM)
+    if intent == "BUY":
         handoff_to_human(user)
-        db.close()
-        return
+        return None
 
-    elif intent == "OBJECTION":
-        user.state = "OBJECTION"
+    # 6️⃣ LLM reply
+    system_prompt = f"""
+You are a WhatsApp sales assistant.
+User state: {user.state}
+Intent: {intent}
 
-    elif intent == "INTEREST":
-        user.state = "INTEREST"
+Rules:
+- Be short
+- Be friendly
+- Do not push if user is not interested
+"""
 
-    else:
-        user.state = "ACTIVE"
+    reply = call_llm([
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": text}
+    ])
 
-    db.commit()
+    # 7️⃣ Send reply
+    send_whatsapp_message(user.platform_user_id, reply)
 
-    # ---------- LLM REPLY (SINGLE SOURCE OF TRUTH) ----------
-    reply = generate_reply(intent, text)
+    # 8️⃣ Save outgoing message
+    save_message(user.id, "out", reply, intent)
 
-    if not reply:
-        reply = "Hi 👋 How can I help you today?"
+    # 9️⃣ Follow-up logic
+    if intent in ["ASK_PRICE", "INTEREST"]:
+        schedule_follow_up(user.id, user.platform, user.platform_user_id)
 
-    print("📤 FINAL REPLY TO USER:", reply)
-    send_message(platform, platform_user_id, reply)
+    return reply
 
-    # ---------- FOLLOW-UP ----------
-    if user.state != "HUMAN_HANDOFF":
-        schedule_follow_up(
-            user_id=user.id,
-            platform=platform,
-            platform_user_id=platform_user_id
-        )
-
-    db.close()

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Request, HTTPException
-from agent import process_message
 from fastapi.responses import PlainTextResponse
-from messaging import send_whatsapp_message
 
+from agent import process_message
+from memory import get_or_create_user
+from db import SessionLocal
+from models import User
 
 router = APIRouter()
 
@@ -35,23 +37,30 @@ async def whatsapp_webhook(request: Request):
 
     try:
         entry = payload["entry"][0]
-        change = entry["changes"][0]
-        value = change["value"]
+        change = entry["changes"][0]["value"]
 
-        if "messages" not in value:
+        if "messages" not in change:
             return {"status": "ignored"}
 
-        message = value["messages"][0]
+        message = change["messages"][0]
 
         if message["type"] != "text":
             return {"status": "unsupported"}
 
-        phone = message["from"]
-        phone = ''.join(filter(str.isdigit, phone))
+        phone = ''.join(filter(str.isdigit, message["from"]))
         text = message["text"]["body"]
 
-        # IMPORTANT: match agent signature
-        process_message(phone=phone, text=text)
+        # 1️⃣ Get or create user
+        user_id = get_or_create_user("whatsapp", phone)
+
+        db = SessionLocal()
+        user = db.query(User).get(user_id)
+
+        # 2️⃣ Process message (STATEFUL)
+        process_message(user, text)
+
+        db.commit()
+        db.close()
 
         return {"status": "ok"}
 

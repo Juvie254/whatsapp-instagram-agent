@@ -1,18 +1,30 @@
 from llm import call_llm
 
 REPLY_PROMPT = """
-You are a friendly WhatsApp seller assistant in Kenya.
-Reply briefly, warmly, and naturally.
-Do not sound like a bot.
-Always move the conversation toward purchase.
+You are a WhatsApp sales assistant in Kenya.
+
+Rules:
+- Replies under 2 sentences.
+- Never ask for known information.
+- Ask only ONE missing detail if any.
+- If READY_TO_CONFIRM, confirm the order.
+- If DISENGAGED, politely stop selling.
+- Sound human and confident.
 """
 
-def generate_reply(intent: str, text: str) -> str:
-    return call_llm([
-        {"role": "system", "content": REPLY_PROMPT},
-        {"role": "assistant", "content": f"Intent: {intent}"},
-        {"role": "user", "content": text}
-    ])
+def generate_reply(intent, text, context, state):
+    result = call_llm(
+        messages=[
+            {"role": "system", "content": REPLY_PROMPT},
+            {"role": "assistant", "content": context},
+            {"role": "assistant", "content": f"Intent: {intent}"},
+            {"role": "assistant", "content": f"State: {state}"},
+            {"role": "user", "content": text},
+        ]
+    )
+
+    return result.strip()
+
 def safe_generate_reply(intent, text):
     try:
         return generate_reply(intent, text)
