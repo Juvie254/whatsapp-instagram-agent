@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from db import SessionLocal
-from models import User, Message, FollowUp
+from models import User
 
 def get_or_create_user(platform, platform_user_id):
     db: Session = SessionLocal()
