@@ -1,3 +1,4 @@
+from datetime import datetime
 from intent import classify_intent
 from memory import get_or_create_user
 from entity_extractor import extract_entities
@@ -11,42 +12,41 @@ from handoff import handoff_to_human
 def process_message(phone: str, text: str):
     platform = "whatsapp"
 
-    # 1️⃣ Get or create user
+    # 1️⃣ Get user + DB session
     user, db = get_or_create_user(platform, phone)
 
-    # 2️⃣ Save/update last seen
-    user.last_seen = datetime.utcnow()
-    db.commit()
+    try:
+        # 2️⃣ Detect intent
+        intent = classify_intent(text)
 
-    # 3️⃣ Detect intent
-    intent = classify_intent(text)
+        # 3️⃣ Extract entities
+        extract_entities(user, text)
 
-    # 4️⃣ Extract entities from message
-    extract_entities(user, text)
+        # 4️⃣ Update state
+        update_state(user, intent)
 
-    # 5️⃣ Update user state based on intent and info
-    update_state(user, intent)
+        # 5️⃣ Check missing info
+        missing = get_missing_info(user)
 
-    # 6️⃣ Determine missing information
-    missing = get_missing_info(user)
+        # 6️⃣ Build LLM context
+        context = build_context(user, missing)
 
-    # 7️⃣ Build context for LLM
-    context = build_context(user, missing)
+        # 7️⃣ Generate reply
+        reply = generate_reply(intent, text, context, user.state)
 
-    # 8️⃣ Generate reply
-    reply = generate_reply(intent, text, context, user.state)
+        # 8️⃣ Send message
+        send_message(platform, phone, reply)
 
-    # 9️⃣ Send reply to WhatsApp
-    send_message(platform, phone, reply)
+        # 9️⃣ Optional human handoff
+        if user.state == "HUMAN_HANDOFF":
+            handoff_to_human(user)
 
-    #  🔟 Human handoff if ready
-    if user.state == "HUMAN_HANDOFF":
         db.commit()
-        handoff_to_human(user)
-        db.close()
-        return
 
-    # 1️⃣1️⃣ Commit changes and close DB session
-    db.commit()
-    db.close()
+    except Exception:
+        db.rollback()
+        raise
+
+    finally:
+        db.close()
 

@@ -50,17 +50,8 @@ async def whatsapp_webhook(request: Request):
         phone = ''.join(filter(str.isdigit, message["from"]))
         text = message["text"]["body"]
 
-        # 1️⃣ Get or create user
-        user_id = get_or_create_user("whatsapp", phone)
-
-        db = SessionLocal()
-        user = db.query(User).get(user_id)
-
-        # 2️⃣ Process message (STATEFUL)
-        process_message(user, text)
-
-        db.commit()
-        db.close()
+        # 🔥 SINGLE ENTRY POINT
+        process_message(phone, text)
 
         return {"status": "ok"}
 
