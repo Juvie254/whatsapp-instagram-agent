@@ -1,14 +1,23 @@
 def build_context(user, missing):
-    return f"""
-Known:
-Product: {user.product}
-Color: {user.color}
-Size: {user.size}
-Quantity: {user.quantity}
-Location: {user.location}
+    known = {
+        "product": user.product,
+        "color": user.color,
+        "size": user.size,
+        "quantity": user.quantity,
+        "location": user.location,
+    }
 
-Missing:
-{", ".join(missing) if missing else "None"}
+    known_clean = {k: v for k, v in known.items() if v}
 
-State: {user.state}
-"""
+    return {
+        "known": known_clean,
+        "missing": missing,
+        "state": user.state,
+        "rules": [
+            "Ask only for missing information",
+            "Do not repeat known details",
+            "Be brief and conversational",
+            "If state is READY_TO_CONFIRM, summarize and ask for confirmation",
+            "If state is HUMAN_HANDOFF, stop selling and acknowledge handoff"
+        ]
+    }

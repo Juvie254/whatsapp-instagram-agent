@@ -1,69 +1,45 @@
-from intent import detect_intent
-from policy import should_respond, next_state
-from memory import save_message
-from messaging import send_whatsapp_message
-from followup import schedule_follow_up
+from intent import classify_intent
+from memory import get_or_create_user, save_message, cancel_followups
+from entity_extractor import extract_entities
+from state_manager import update_state
+from missing_info import get_missing_info
+from context_builder import build_context
+from responder import generate_reply
+from send import send_message
 from handoff import handoff_to_human
-from groq import Groq
+from follow_up import schedule_follow_up
 
-client = Groq()
+def process_message(phone: str, text: str):
+    platform = "whatsapp"
 
-def call_llm(messages):
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=messages,
-        temperature=0.6
-    )
-    return response.choices[0].message.content
+    user, db = get_or_create_user(platform, phone)
 
-
-def process_message(user, text):
-    # 1️⃣ Save incoming message
+    cancel_followups(user.id)
     save_message(user.id, "in", text)
 
-    # 2️⃣ Detect intent
-    intent = detect_intent(text)
+    intent = classify_intent(text)
 
-    # 3️⃣ Policy check (CRITICAL)
-    if not should_respond(user.state, intent):
-        print("🛑 Policy blocked response")
-        return None
+    extract_entities(user, text)
+    update_state(user, intent)
 
-    # 4️⃣ State transition
-    new_state = next_state(user.state, intent)
-    user.state = new_state
+    missing = get_missing_info(user)
+    context = build_context(user, missing)
 
-    # 5️⃣ Hard rules (NO LLM)
-    if intent == "BUY":
+    reply = generate_reply(intent, text, context, user.state)
+
+    send_message(platform, phone, reply)
+    save_message(user.id, "out", reply, intent=intent)
+
+    if user.state == "HUMAN_HANDOFF":
+        db.commit()
         handoff_to_human(user)
-        return None
+        db.close()
+        return
 
-    # 6️⃣ LLM reply
-    system_prompt = f"""
-You are a WhatsApp sales assistant.
-User state: {user.state}
-Intent: {intent}
+    if user.state not in ["DISENGAGED"]:
+        schedule_follow_up(user.id, platform, phone)
 
-Rules:
-- Be short
-- Be friendly
-- Do not push if user is not interested
-"""
+    db.commit()
+    db.close()
 
-    reply = call_llm([
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": text}
-    ])
-
-    # 7️⃣ Send reply
-    send_whatsapp_message(user.platform_user_id, reply)
-
-    # 8️⃣ Save outgoing message
-    save_message(user.id, "out", reply, intent)
-
-    # 9️⃣ Follow-up logic
-    if intent in ["ASK_PRICE", "INTEREST"]:
-        schedule_follow_up(user.id, user.platform, user.platform_user_id)
-
-    return reply
 
