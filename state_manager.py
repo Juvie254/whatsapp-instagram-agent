@@ -3,9 +3,12 @@ def update_state(user, intent: str):
     Determines the NEXT user state based on intent and collected info.
     Exactly ONE state transition per call.
     """
-
     # 🔒 Terminal state
     if user.state == "HUMAN_HANDOFF":
+        return
+
+    if intent == GREETING:
+        user.state == "GREETING"
         return
 
     # 🛑 Hard intent overrides

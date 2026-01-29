@@ -2,6 +2,7 @@ from llm import call_llm
 
 INTENT_PROMPT = """
 Classify the message into exactly ONE of these categories:
+GREETING
 ASK_PRICE
 INTEREST
 OBJECTION
