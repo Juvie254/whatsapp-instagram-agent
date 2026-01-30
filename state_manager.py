@@ -3,20 +3,17 @@ def update_state(user, intent: str):
     Determines the NEXT user state based on intent and collected info.
     Exactly ONE state transition per call.
     """
+
     # 🔒 Terminal state
     if user.state == "HUMAN_HANDOFF":
         return
 
-    if intent == GREETING:
-        user.state == "GREETING"
-        return
-
-    # 🛑 Hard intent overrides
+    # 🛑 Hard intent override
     if intent == "BUY":
         user.state = "HUMAN_HANDOFF"
         return
 
-    # 😕 Soft objection (do NOT disengage immediately)
+    # 😕 Soft objection (pause selling)
     if intent == "OBJECTION":
         user.state = "OBJECTION"
         return
@@ -42,3 +39,4 @@ def update_state(user, intent: str):
     if user.product and user.state == "DISCOVERY":
         user.state = "DETAILS_COLLECTED"
         return
+
