@@ -3,7 +3,7 @@ from groq import Groq
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-def call_llm(messages, model="openai/gpt-oss-120b"):
+def call_llm(messages, model="groq/compound-mini"):
     response = client.chat.completions.create(
         model=model,
         messages=messages,

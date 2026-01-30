@@ -9,7 +9,7 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def call_llm(model: str, messages: list):
     response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
+        model="groq/compound-mini",
         messages=messages,
         temperature=0.7
     )
